@@ -1,0 +1,31 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"compilerOptions": {
+		"composite": true,
+		"target": "ES2020",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"declaration": true,
+		"declarationMap": true,
+		"outDir": "./dist",
+		"rootDir": "./src",
+		"emitDeclarationOnly": true,
+		"lib": ["ESNext"],
+		"strict": true,
+		"incremental": true,
+		"skipLibCheck": true,
+		"types": ["node"]
+	},
+	"include": ["src/**/*.ts"],
+	"references": [],
+	"exclude": [
+		"src/**/*.test.ts",
+		"src/**/*.spec.ts",
+		"src/**/*.test.tsx",
+		"src/**/*.spec.tsx",
+		"src/**/*.test.js",
+		"src/**/*.spec.js",
+		"src/**/*.test.jsx",
+		"src/**/*.spec.jsx"
+	]
+}
