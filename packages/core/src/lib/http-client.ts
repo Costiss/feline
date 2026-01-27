@@ -5,7 +5,30 @@ import axios, { type CreateAxiosDefaults } from 'axios';
 import fp from 'fastify-plugin';
 import { getMeter } from './utils/metrics';
 
+/**
+ * Configuration options for the HTTP client module.
+ *
+ * @interface HttpClientModuleOptions
+ */
 export interface HttpClientModuleOptions {
+	/**
+	 * Configuration options for the HTTPS agent.
+	 * Passed directly to Node.js https.Agent constructor.
+	 *
+	 * Common options:
+	 * - keepAlive: boolean (default: true) - Reuse connections
+	 * - maxSockets: number - Maximum number of sockets
+	 * - timeout: number - Socket timeout in milliseconds
+	 * - rejectUnauthorized: boolean - Verify SSL certificates
+	 *
+	 * @type {https.AgentOptions}
+	 * @example
+	 * agentConfig: {
+	 *   keepAlive: true,
+	 *   maxSockets: 50,
+	 *   timeout: 30000
+	 * }
+	 */
 	agentConfig?: https.AgentOptions;
 }
 
@@ -17,6 +40,54 @@ declare module 'axios' {
 	}
 }
 
+/**
+ * Fastify plugin that sets up HTTP client factory with automatic instrumentation.
+ *
+ * Features:
+ * - Axios HTTP client factory accessible via dependencies
+ * - Automatic tracing header propagation (from TracingModule)
+ * - OpenTelemetry metrics collection:
+ *   - http_client_request_count: Counter of requests by endpoint/method/status
+ *   - http_client_request_latency: Histogram of request latencies in milliseconds
+ * - Per-request scoped HTTP clients that include request traces
+ * - HTTPS agent with connection pooling
+ * - Comprehensive error handling
+ *
+ * Usage:
+ * Access via `request.dependencies.resolve('createHttpClient')()` in route handlers
+ * or `app.dependencies.resolve('createHttpClient')()` at application level.
+ *
+ * The HTTP client automatically:
+ * - Includes all tracing headers (traceparent, x-request-id, etc.)
+ * - Records metrics for observability
+ * - Uses connection pooling for performance
+ *
+ * @example
+ * // In route handlers
+ * app.get('/users/:id', async (request, reply) => {
+ *   const httpClient = request.dependencies.resolve('createHttpClient')({
+ *     baseURL: 'https://api.example.com'
+ *   });
+ *   const user = await httpClient.get(`/users/${request.params.id}`);
+ *   return user.data;
+ * });
+ *
+ * // Custom configuration per request
+ * const client = request.dependencies.resolve('createHttpClient')({
+ *   timeout: 5000,
+ *   headers: { 'X-API-Key': 'secret' }
+ * });
+ *
+ * // Application-level client (without request context)
+ * const client = app.dependencies.resolve('createHttpClient')({
+ *   baseURL: 'https://api.example.com'
+ * });
+ *
+ * @remarks
+ * This module is automatically registered by the feline() factory function.
+ * Request-scoped clients are created per HTTP request to include tracing context.
+ * Application-level clients can be used for background tasks or external integrations.
+ */
 export const HttpClientModule = fp<HttpClientModuleOptions>((app, opts) => {
 	const { agentConfig = {} } = opts;
 	const createHttpClient = (config: CreateAxiosDefaults = {}) => {

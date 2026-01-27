@@ -3,6 +3,54 @@ import fp from 'fastify-plugin';
 import { hasZodFastifySchemaValidationErrors } from 'fastify-type-provider-zod';
 import type { SyncModule } from '..';
 
+/**
+ * Fastify error handler plugin that provides centralized error handling.
+ *
+ * Handles three categories of errors:
+ *
+ * 1. **Axios HTTP Errors** (isAxiosError)
+ *    - Status: 502 Bad Gateway
+ *    - Response: { error, status, details }
+ *    - Logs full request context (URL, base URL, response status)
+ *
+ * 2. **Zod Validation Errors** (hasZodFastifySchemaValidationErrors)
+ *    - Status: 400 Bad Request
+ *    - Response: { error, details }
+ *    - Logs validation error message
+ *
+ * 3. **Unhandled Errors** (all others)
+ *    - Status: 500 Internal Server Error
+ *    - Response: { error, details }
+ *    - Logs full error stack trace
+ *
+ * All errors are logged at appropriate levels (error/warn) with full context
+ * for debugging and monitoring purposes.
+ *
+ * @example
+ * // Automatic validation error handling
+ * app.post('/users', {
+ *   schema: {
+ *     body: z.object({
+ *       email: z.string().email(),
+ *       age: z.number().min(18)
+ *     })
+ *   }
+ * }, async (request, reply) => {
+ *   // If validation fails, automatically returns 400 with error details
+ * });
+ *
+ * // Automatic HTTP client error handling
+ * app.get('/external', async (request, reply) => {
+ *   const client = request.dependencies.resolve('createHttpClient')();
+ *   const result = await client.get('https://api.example.com/data');
+ *   // If HTTP request fails, automatically returns 502 with response details
+ *   return result.data;
+ * });
+ *
+ * @remarks
+ * This module is automatically registered by the feline() factory function.
+ * It should be registered after other modules to catch all errors.
+ */
 export const ErrorHandlerModule: SyncModule = fp((app, _, done) => {
 	app.setErrorHandler((err, request, reply) => {
 		if (isAxiosError(err)) {
