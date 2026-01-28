@@ -1,0 +1,197 @@
+name: Deploy from Tags
+
+on:
+  push:
+    tags:
+      - '**'
+
+jobs:
+  parse-tag:
+    name: Parse Tag and Determine Release Type
+    runs-on: ubuntu-latest
+    outputs:
+      release-type: ${{ steps.determine-type.outputs.release-type }}
+      package-name: ${{ steps.extract-info.outputs.package-name }}
+      version: ${{ steps.extract-info.outputs.version }}
+      should-publish: ${{ steps.validate.outputs.should-publish }}
+      is-master: ${{ steps.check-branch.outputs.is-master }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Check if Tag is on Master Branch
+        id: check-branch
+        run: |
+          # Get the commit that was tagged
+          TAG_COMMIT=$(git rev-list -n 1 ${{ github.ref_name }})
+          
+          # Check if this commit is on the master branch
+          if git merge-base --is-ancestor "$TAG_COMMIT" origin/master; then
+            echo "is-master=true" >> $GITHUB_OUTPUT
+          else
+            echo "is-master=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Extract Tag Information
+        id: extract-info
+        run: |
+          TAG="${{ github.ref_name }}"
+          
+          # Extract package name and version
+          # Format: @package/name@version or package@version
+          if [[ $TAG =~ ^(@[^/]+/[^@]+)@(.+)$ ]]; then
+            PACKAGE_NAME="${BASH_REMATCH[1]}"
+            VERSION="${BASH_REMATCH[2]}"
+          elif [[ $TAG =~ ^([^@]+)@(.+)$ ]]; then
+            PACKAGE_NAME="${BASH_REMATCH[1]}"
+            VERSION="${BASH_REMATCH[2]}"
+          else
+            echo "Invalid tag format: $TAG"
+            exit 1
+          fi
+          
+          echo "package-name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Determine Release Type
+        id: determine-type
+        run: |
+          TAG="${{ github.ref_name }}"
+          
+          # Check if tag matches RC pattern: ^.+@.+-rc.\w$
+          if [[ $TAG =~ ^.+@.+-rc\.[a-zA-Z0-9]+$ ]]; then
+            echo "release-type=next" >> $GITHUB_OUTPUT
+            echo "Release Type: next (RC version)"
+          else
+            echo "release-type=current" >> $GITHUB_OUTPUT
+            echo "Release Type: current (stable version)"
+          fi
+
+      - name: Validate Tag Format
+        id: validate
+        run: |
+          TAG="${{ github.ref_name }}"
+          
+          # Validate tag format: must contain @ separator
+          if [[ $TAG =~ ^.+@.+$ ]]; then
+            echo "should-publish=true" >> $GITHUB_OUTPUT
+          else
+            echo "should-publish=false" >> $GITHUB_OUTPUT
+            echo "Invalid tag format: $TAG (must contain @ separator)"
+          fi
+
+  publish-npm:
+    name: Publish to NPM
+    runs-on: ubuntu-latest
+    needs: parse-tag
+    if: |
+      needs.parse-tag.outputs.should-publish == 'true' &&
+      (needs.parse-tag.outputs.release-type == 'next' || needs.parse-tag.outputs.is-master == 'true')
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Sync package.json Version with Tag
+        run: |
+          TAG_VERSION="${{ needs.parse-tag.outputs.version }}"
+          PACKAGE_NAME="${{ needs.parse-tag.outputs.package-name }}"
+          
+          # Find the package directory
+          PACKAGE_DIR=$(find packages -name "package.json" -type f | xargs grep -l "\"name\": \"$PACKAGE_NAME\"" | head -1 | xargs dirname)
+          
+          if [ -z "$PACKAGE_DIR" ]; then
+            echo "Package not found: $PACKAGE_NAME"
+            exit 1
+          fi
+          
+          echo "Updating version in $PACKAGE_DIR/package.json to $TAG_VERSION"
+          
+          # Update version in package.json using npm
+          cd "$PACKAGE_DIR"
+          npm version "$TAG_VERSION" --no-git-tag-version
+
+      - name: Build Package
+        run: |
+          PACKAGE_NAME="${{ needs.parse-tag.outputs.package-name }}"
+          PACKAGE_DIR=$(find packages -name "package.json" -type f | xargs grep -l "\"name\": \"$PACKAGE_NAME\"" | head -1 | xargs dirname)
+          
+          cd "$PACKAGE_DIR"
+          pnpm run build
+
+      - name: Publish to NPM
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          PACKAGE_NAME="${{ needs.parse-tag.outputs.package-name }}"
+          RELEASE_TYPE="${{ needs.parse-tag.outputs.release-type }}"
+          PACKAGE_DIR=$(find packages -name "package.json" -type f | xargs grep -l "\"name\": \"$PACKAGE_NAME\"" | head -1 | xargs dirname)
+          
+          cd "$PACKAGE_DIR"
+          
+          if [ "$RELEASE_TYPE" = "next" ]; then
+            echo "Publishing as 'next' tag"
+            npm publish --tag next
+          else
+            echo "Publishing as 'latest' tag (default)"
+            npm publish
+          fi
+
+      - name: Create Release Notes
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ needs.parse-tag.outputs.package-name }}@${{ needs.parse-tag.outputs.version }}
+          body: |
+            # ${{ needs.parse-tag.outputs.package-name }}@${{ needs.parse-tag.outputs.version }}
+            
+            **Release Type**: ${{ needs.parse-tag.outputs.release-type }}
+            
+            This release was automatically published to NPM.
+            - Package: `${{ needs.parse-tag.outputs.package-name }}`
+            - Version: `${{ needs.parse-tag.outputs.version }}`
+            - NPM Tag: `${{ needs.parse-tag.outputs.release-type == 'next' && 'next' || 'latest' }}`
+          draft: false
+          prerelease: ${{ needs.parse-tag.outputs.release-type == 'next' }}
+
+  failure-notification:
+    name: Notify on Invalid Tag or Branch
+    runs-on: ubuntu-latest
+    needs: parse-tag
+    if: |
+      needs.parse-tag.outputs.should-publish == 'false' ||
+      (needs.parse-tag.outputs.release-type == 'current' && needs.parse-tag.outputs.is-master == 'false')
+    steps:
+      - name: Check Failure Reason
+        run: |
+          if [ "${{ needs.parse-tag.outputs.should-publish }}" != "true" ]; then
+            echo "❌ Tag format is invalid or not suitable for publishing"
+            echo "Expected format: @package/name@version or package@version"
+            echo "Received tag: ${{ github.ref_name }}"
+          elif [ "${{ needs.parse-tag.outputs.release-type }}" == "current" ] && [ "${{ needs.parse-tag.outputs.is-master }}" != "true" ]; then
+            echo "❌ Stable releases (latest tag) can only be published from the master branch"
+            echo "Current tag: ${{ github.ref_name }}"
+            echo "Release type: ${{ needs.parse-tag.outputs.release-type }}"
+            echo "To publish as 'latest', create the tag from the master branch"
+            echo ""
+            echo "RC releases (next tag) can be created from any branch"
+          fi

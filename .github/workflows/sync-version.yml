@@ -1,0 +1,78 @@
+name: Sync Version with package.json
+
+on:
+  workflow_dispatch:
+    inputs:
+      package-name:
+        description: 'Package name (e.g., @feline/core)'
+        required: true
+        type: string
+      new-version:
+        description: 'New version (e.g., 1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  sync-version:
+    name: Sync Version to package.json
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Find Package Directory
+        id: find-package
+        run: |
+          PACKAGE_NAME="${{ inputs.package-name }}"
+          PACKAGE_DIR=$(find packages -name "package.json" -type f | xargs grep -l "\"name\": \"$PACKAGE_NAME\"" | head -1 | xargs dirname)
+          
+          if [ -z "$PACKAGE_DIR" ]; then
+            echo "Package not found: $PACKAGE_NAME"
+            exit 1
+          fi
+          
+          echo "package-dir=$PACKAGE_DIR" >> $GITHUB_OUTPUT
+          echo "Found package at: $PACKAGE_DIR"
+
+      - name: Update Version
+        run: |
+          PACKAGE_DIR="${{ steps.find-package.outputs.package-dir }}"
+          NEW_VERSION="${{ inputs.new-version }}"
+          
+          cd "$PACKAGE_DIR"
+          npm version "$NEW_VERSION" --no-git-tag-version
+          
+          echo "Updated version to: $NEW_VERSION"
+
+      - name: Commit and Push Changes
+        run: |
+          PACKAGE_DIR="${{ steps.find-package.outputs.package-dir }}"
+          NEW_VERSION="${{ inputs.new-version }}"
+          PACKAGE_NAME="${{ inputs.package-name }}"
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add "$PACKAGE_DIR/package.json"
+          git commit -m "chore: bump $PACKAGE_NAME to v$NEW_VERSION"
+          git push
+
+      - name: Create Tag
+        run: |
+          NEW_VERSION="${{ inputs.new-version }}"
+          PACKAGE_NAME="${{ inputs.package-name }}"
+          
+          # Create tag with format: package@version
+          TAG="$PACKAGE_NAME@$NEW_VERSION"
+          
+          git tag "$TAG"
+          git push origin "$TAG"
+          
+          echo "Created tag: $TAG"
