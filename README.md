@@ -2,7 +2,7 @@
 
 > An opinionated, minimalistic Node.js backend framework built on Fastify for reducing complexity and runtime overhead.
 
-[![GitHub](https://img.shields.io/badge/github-anomalyco/feline-blue)](https://github.com/anomalyco/feline)
+[![GitHub](https://img.shields.io/badge/github-Costiss/feline-blue)](https://github.com/Costiss/feline)
 [![npm](https://img.shields.io/badge/npm-@feline/core-red)](https://www.npmjs.com/package/@feline/core)
 [![License](https://img.shields.io/badge/license-MIT-green)](#license)
 
@@ -19,6 +19,21 @@ Feline was created out of frustration with frameworks like NestJS that hide comp
 - **Type Safety** - Full TypeScript support with Zod runtime validation
 - **Built-in Observability** - Distributed tracing, metrics, and structured logging out of the box
 - **Modular Architecture** - Fastify plugin system with Awilix dependency injection
+
+## Getting Started
+
+### Installation
+
+```bash
+npm install @feline/core
+```
+
+### Next Steps
+
+1. **First Time?** → [Getting Started Guide](https://github.com/Costiss/feline/wiki/Getting-Started)
+2. **Want Examples?** → [Getting Started with Code Examples](https://github.com/Costiss/feline/wiki/Getting-Started#quick-start)
+3. **Need Configuration?** → [Configuration Reference](https://github.com/Costiss/feline/wiki/Configuration)
+4. **Learning the Framework?** → [Core Concepts](https://github.com/Costiss/feline/wiki)
 
 ### Key Differences
 
@@ -38,25 +53,25 @@ Feline is built around four core concepts:
 
 Manage application dependencies using Awilix with support for singleton and request-scoped instances.
 
-**[→ Learn about Dependency Injection](./feline.wiki/Core-Concepts/Dependency-Injection.md)**
+**[→ Learn about Dependency Injection](https://github.com/Costiss/feline/wiki/Dependency-Injection)**
 
 ### 2. Type Safety
 
 Schema-based validation with Zod for both request/response validation and type inference.
 
-**[→ Learn about Type Safety](./feline.wiki/Core-Concepts/Type-Safety.md)**
+**[→ Learn about Type Safety](https://github.com/Costiss/feline/wiki/Type-Safety)**
 
 ### 3. Error Handling
 
 Centralized error handling with automatic response formatting for validation errors, HTTP client errors, and unhandled exceptions.
 
-**[→ Learn about Error Handling](./feline.wiki/Core-Concepts/Error-Handling.md)**
+**[→ Learn about Error Handling](https://github.com/Costiss/feline/wiki/Error-Handling)**
 
 ### 4. Observability
 
 Built-in support for distributed tracing, structured logging, and OpenTelemetry metrics.
 
-**[→ Learn about Tracing & Observability](./feline.wiki/Core-Concepts/Tracing-Observability.md)**
+**[→ Learn about Tracing & Observability](https://github.com/Costiss/feline/wiki/Tracing-Observability)**
 
 ## Built-in Features
 
@@ -66,25 +81,25 @@ Feline includes production-ready features for common backend needs:
 
 Type-safe HTTP client with automatic trace propagation to external services and built-in metrics collection.
 
-**[→ HTTP Client Documentation](./feline.wiki/Features/HTTP-Client.md)**
+**[→ HTTP Client Documentation](https://github.com/Costiss/feline/wiki/HTTP-Client)**
 
 ### Health Checks
 
 Flexible health check system with per-component status, Kubernetes probe support, and load balancer integration.
 
-**[→ Health Checks Documentation](./feline.wiki/Features/Health-Checks.md)**
+**[→ Health Checks Documentation](https://github.com/Costiss/feline/wiki/Health-Checks)**
 
 ### Request Logging
 
 Structured JSON logging with automatic request/response tracking, development-friendly formatting, and log aggregation support.
 
-**[→ Request Logging Documentation](./feline.wiki/Features/Request-Logging.md)**
+**[→ Request Logging Documentation](https://github.com/Costiss/feline/wiki/Request-Logging)**
 
 ### Graceful Shutdown
 
 Automatic SIGTERM handling with support for cleanup handlers, in-flight request completion, and resource management.
 
-**[→ Graceful Shutdown Documentation](./feline.wiki/Features/Graceful-Shutdown.md)**
+**[→ Graceful Shutdown Documentation](https://github.com/Costiss/feline/wiki/Graceful-Shutdown)**
 
 ## Technology Stack
 
@@ -114,49 +129,29 @@ const app = feline({
 });
 ```
 
-**[→ Complete Configuration Reference](./feline.wiki/Configuration.md)**
-
-## Getting Started
-
-### Installation
-
-```bash
-npm install @feline/core
-```
-
-### Next Steps
-
-1. **First Time?** → [Getting Started Guide](./feline.wiki/Getting-Started.md)
-2. **Want Examples?** → [Getting Started with Code Examples](./feline.wiki/Getting-Started.md#quick-start)
-3. **Need Configuration?** → [Configuration Reference](./feline.wiki/Configuration.md)
-4. **Learning the Framework?** → [Core Concepts](./feline.wiki/Home.md)
+**[→ Complete Configuration Reference](https://github.com/Costiss/feline/wiki/Configuration)**
 
 ## Documentation
 
 Complete documentation with guides, examples, and best practices:
 
-### Getting Started
-
-- [Getting Started Guide](./feline.wiki/Getting-Started.md) - 5-minute quick start with working examples
-- [Configuration Reference](./feline.wiki/Configuration.md) - Complete option documentation
-
 ### Core Concepts (Learn the Framework)
 
-- [Dependency Injection](./feline.wiki/Core-Concepts/Dependency-Injection.md) - Awilix IoC patterns
-- [Type Safety with Zod](./feline.wiki/Core-Concepts/Type-Safety.md) - Schema validation and type inference
-- [Error Handling](./feline.wiki/Core-Concepts/Error-Handling.md) - Centralized error management
-- [Tracing & Observability](./feline.wiki/Core-Concepts/Tracing-Observability.md) - Distributed tracing and metrics
+- [Dependency Injection](https://github.com/Costiss/feline/wiki/Dependency-Injection) - Awilix IoC patterns
+- [Type Safety with Zod](https://github.com/Costiss/feline/wiki/Type-Safety) - Schema validation and type inference
+- [Error Handling](https://github.com/Costiss/feline/wiki/Error-Handling) - Centralized error management
+- [Tracing & Observability](https://github.com/Costiss/feline/wiki/Tracing-Observability) - Distributed tracing and metrics
 
 ### Features (Implementation Guides)
 
-- [HTTP Client Module](./feline.wiki/Features/HTTP-Client.md) - Traced HTTP requests with metrics
-- [Health Checks](./feline.wiki/Features/Health-Checks.md) - Kubernetes and load balancer integration
-- [Request Logging](./feline.wiki/Features/Request-Logging.md) - Structured logging and integration
-- [Graceful Shutdown](./feline.wiki/Features/Graceful-Shutdown.md) - Clean process termination
+- [HTTP Client Module](https://github.com/Costiss/feline/wiki/HTTP-Client) - Traced HTTP requests with metrics
+- [Health Checks](https://github.com/Costiss/feline/wiki/Health-Checks) - Kubernetes and load balancer integration
+- [Request Logging](https://github.com/Costiss/feline/wiki/Request-Logging) - Structured logging and integration
+- [Graceful Shutdown](https://github.com/Costiss/feline/wiki/Graceful-Shutdown) - Clean process termination
 
 ### Wiki Home
 
-- [Wiki Home](./feline.wiki/Home.md) - Complete documentation index
+- [Wiki Home](https://github.com/Costiss/feline/wiki) - Complete documentation index
 
 ## Project Structure
 
@@ -187,7 +182,7 @@ export const UsersModule: SyncModule = (app, _, done) => {
 
 ## Contributing
 
-We welcome contributions! Please visit the [GitHub repository](https://github.com/anomalyco/feline) to:
+We welcome contributions! Please visit the [GitHub repository](https://github.com/Costiss/feline) to:
 
 - Report issues
 - Suggest features
@@ -196,9 +191,9 @@ We welcome contributions! Please visit the [GitHub repository](https://github.co
 
 ## Community
 
-- **GitHub Issues**: [Report bugs and request features](https://github.com/anomalyco/feline/issues)
-- **Discussions**: [Ask questions and share ideas](https://github.com/anomalyco/feline/discussions)
-- **Documentation**: [Browse the wiki](./feline.wiki/)
+- **GitHub Issues**: [Report bugs and request features](https://github.com/Costiss/feline/issues)
+- **Discussions**: [Ask questions and share ideas](https://github.com/Costiss/feline/discussions)
+- **Documentation**: [Browse the wiki](https://github.com/Costiss/feline/wiki)
 
 ## License
 
@@ -206,16 +201,16 @@ MIT - See [LICENSE](LICENSE)
 
 ## Resources
 
-- **GitHub**: https://github.com/anomalyco/feline
+- **GitHub**: https://github.com/Costiss/feline
 - **npm**: https://npmjs.com/package/@feline/core
-- **Documentation**: [./feline.wiki](./feline.wiki)
-- **Issues**: https://github.com/anomalyco/feline/issues
-- **Discussions**: https://github.com/anomalyco/feline/discussions
+- **Documentation**: https://github.com/Costiss/feline/wiki
+- **Issues**: https://github.com/Costiss/feline/issues
+- **Discussions**: https://github.com/Costiss/feline/discussions
 
 ## Support
 
-- 📖 [Read the Documentation](./feline.wiki)
-- 🐛 [Report Issues](https://github.com/anomalyco/feline/issues)
-- 💬 [Join Discussions](https://github.com/anomalyco/feline/discussions)
+- 📖 [Read the Documentation](https://github.com/Costiss/feline/wiki)
+- 🐛 [Report Issues](https://github.com/Costiss/feline/issues)
+- 💬 [Join Discussions](https://github.com/Costiss/feline/discussions)
 
 ---
