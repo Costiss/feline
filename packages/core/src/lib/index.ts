@@ -1,4 +1,12 @@
-import fastify, { type FastifyServerOptions } from 'fastify';
+import fastify, {
+	type FastifyBaseLogger,
+	type FastifyInstance,
+	type FastifyServerOptions,
+	type RawReplyDefaultExpression,
+	type RawRequestDefaultExpression,
+	type RawServerDefault,
+} from 'fastify';
+import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { DependenciesModule } from './dependencies';
 import { ErrorHandlerModule } from './error-handler';
 import { GracefulShutdown, type GracefulShutdownOptions } from './graceful-shutdown';
@@ -135,5 +143,11 @@ export function feline(opts: FelineOptions = { name: 'feline-app', fastify: {} }
 	app.register(GracefulShutdown, opts.gracefulShutdown ?? {});
 	app.register(RequestLoggerPlugin, opts.requestLogger || {});
 
-	return app;
+	return app as FastifyInstance<
+		RawServerDefault,
+		RawRequestDefaultExpression<RawServerDefault>,
+		RawReplyDefaultExpression<RawServerDefault>,
+		FastifyBaseLogger,
+		ZodTypeProvider
+	>;
 }
