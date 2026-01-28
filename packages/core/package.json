@@ -1,5 +1,5 @@
 {
-	"name": "@feline/core",
+	"name": "@felinejs/core",
 	"description": "Opinionated Backend framework library for Node.js on top of Fastify",
 	"version": "0.0.0",
 	"license": "MIT",
