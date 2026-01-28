@@ -3,7 +3,7 @@ name: Deploy from Tags
 on:
   push:
     tags:
-      - '**'
+      - "**"
 
 jobs:
   parse-tag:
@@ -26,7 +26,7 @@ jobs:
         run: |
           # Get the commit that was tagged
           TAG_COMMIT=$(git rev-list -n 1 ${{ github.ref_name }})
-          
+
           # Check if this commit is on the master branch
           if git merge-base --is-ancestor "$TAG_COMMIT" origin/master; then
             echo "is-master=true" >> $GITHUB_OUTPUT
@@ -38,7 +38,7 @@ jobs:
         id: extract-info
         run: |
           TAG="${{ github.ref_name }}"
-          
+
           # Extract package name and version
           # Format: @package/name@version or package@version
           if [[ $TAG =~ ^(@[^/]+/[^@]+)@(.+)$ ]]; then
@@ -51,7 +51,7 @@ jobs:
             echo "Invalid tag format: $TAG"
             exit 1
           fi
-          
+
           echo "package-name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
@@ -59,7 +59,7 @@ jobs:
         id: determine-type
         run: |
           TAG="${{ github.ref_name }}"
-          
+
           # Check if tag matches RC pattern: ^.+@.+-rc.\w$
           if [[ $TAG =~ ^.+@.+-rc\.[a-zA-Z0-9]+$ ]]; then
             echo "release-type=next" >> $GITHUB_OUTPUT
@@ -73,7 +73,7 @@ jobs:
         id: validate
         run: |
           TAG="${{ github.ref_name }}"
-          
+
           # Validate tag format: must contain @ separator
           if [[ $TAG =~ ^.+@.+$ ]]; then
             echo "should-publish=true" >> $GITHUB_OUTPUT
@@ -98,8 +98,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
@@ -112,18 +112,18 @@ jobs:
       - name: Sync package.json Version with Tag
         run: |
           TAG_VERSION="${{ needs.parse-tag.outputs.version }}"
-          PACKAGE_NAME="${{ needs.parse-tag.outputs.package-name }}"
-          
+          PACKAGE_NAME="@felinejs/${{ needs.parse-tag.outputs.package-name }}"
+
           # Find the package directory
           PACKAGE_DIR=$(find packages -name "package.json" -type f | xargs grep -l "\"name\": \"$PACKAGE_NAME\"" | head -1 | xargs dirname)
-          
+
           if [ -z "$PACKAGE_DIR" ]; then
             echo "Package not found: $PACKAGE_NAME"
             exit 1
           fi
-          
+
           echo "Updating version in $PACKAGE_DIR/package.json to $TAG_VERSION"
-          
+
           # Update version in package.json using npm
           cd "$PACKAGE_DIR"
           npm version "$TAG_VERSION" --no-git-tag-version
@@ -132,7 +132,7 @@ jobs:
         run: |
           PACKAGE_NAME="${{ needs.parse-tag.outputs.package-name }}"
           PACKAGE_DIR=$(find packages -name "package.json" -type f | xargs grep -l "\"name\": \"$PACKAGE_NAME\"" | head -1 | xargs dirname)
-          
+
           cd "$PACKAGE_DIR"
           pnpm run build
 
@@ -143,9 +143,9 @@ jobs:
           PACKAGE_NAME="${{ needs.parse-tag.outputs.package-name }}"
           RELEASE_TYPE="${{ needs.parse-tag.outputs.release-type }}"
           PACKAGE_DIR=$(find packages -name "package.json" -type f | xargs grep -l "\"name\": \"$PACKAGE_NAME\"" | head -1 | xargs dirname)
-          
+
           cd "$PACKAGE_DIR"
-          
+
           if [ "$RELEASE_TYPE" = "next" ]; then
             echo "Publishing as 'next' tag"
             npm publish --tag next
@@ -163,9 +163,9 @@ jobs:
           release_name: Release ${{ needs.parse-tag.outputs.package-name }}@${{ needs.parse-tag.outputs.version }}
           body: |
             # ${{ needs.parse-tag.outputs.package-name }}@${{ needs.parse-tag.outputs.version }}
-            
+
             **Release Type**: ${{ needs.parse-tag.outputs.release-type }}
-            
+
             This release was automatically published to NPM.
             - Package: `${{ needs.parse-tag.outputs.package-name }}`
             - Version: `${{ needs.parse-tag.outputs.version }}`
