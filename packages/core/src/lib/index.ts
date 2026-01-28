@@ -19,6 +19,8 @@ import { getLogger } from './utils';
 
 export type { HealthCheckMethod, HealthCheckStatus } from './healthcheck';
 
+export type { HttpClient } from './http-client';
+
 /**
  * Configuration options for Feline framework initialization.
  *
@@ -126,7 +128,7 @@ export type FelineApplication = Awaited<ReturnType<typeof feline>>;
  * 7. GracefulShutdown - Signal handling and cleanup
  * 8. RequestLoggerPlugin - Structured request logging
  */
-export function feline(opts: FelineOptions = { name: 'feline-app', fastify: {} }) {
+export async function feline(opts: FelineOptions = { name: 'feline-app', fastify: {} }) {
 	process.env.OTEL_SERVICE_NAME = opts.name;
 	const app = fastify({
 		loggerInstance: getLogger('default'),
@@ -134,14 +136,16 @@ export function feline(opts: FelineOptions = { name: 'feline-app', fastify: {} }
 		...opts.fastify,
 	});
 
-	app.register(TracingModule, opts.tracing || {});
-	app.register(TypeProviderModule);
-	app.register(DependenciesModule);
-	app.register(HealthCheckModule, opts.healthcheck || {});
-	app.register(HttpClientModule, opts.httpClient || {});
-	app.register(ErrorHandlerModule);
-	app.register(GracefulShutdown, opts.gracefulShutdown ?? {});
-	app.register(RequestLoggerPlugin, opts.requestLogger || {});
+	await Promise.all([
+		app.register(TracingModule, opts.tracing || {}),
+		app.register(TypeProviderModule),
+		app.register(DependenciesModule),
+		app.register(HealthCheckModule, opts.healthcheck || {}),
+		app.register(HttpClientModule, opts.httpClient || {}),
+		app.register(ErrorHandlerModule),
+		app.register(GracefulShutdown, opts.gracefulShutdown ?? {}),
+		app.register(RequestLoggerPlugin, opts.requestLogger || {}),
+	]);
 
 	return app as FastifyInstance<
 		RawServerDefault,

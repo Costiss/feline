@@ -1,9 +1,11 @@
 import https from 'node:https';
 import type { Attributes } from '@opentelemetry/api';
 import { asFunction, asValue } from 'awilix';
-import axios, { type CreateAxiosDefaults } from 'axios';
+import axios, { type AxiosInstance, type CreateAxiosDefaults } from 'axios';
 import fp from 'fastify-plugin';
 import { getMeter } from './utils/metrics';
+
+export type HttpClient = AxiosInstance;
 
 /**
  * Configuration options for the HTTP client module.
@@ -90,7 +92,7 @@ declare module 'axios' {
  */
 export const HttpClientModule = fp<HttpClientModuleOptions>((app, opts) => {
 	const { agentConfig = {} } = opts;
-	const createHttpClient = (config: CreateAxiosDefaults = {}) => {
+	const createHttpClient = (config: CreateAxiosDefaults = {}): HttpClient => {
 		const httpClient = axios.create({
 			httpsAgent: app.dependencies.resolve('httpsAgent'),
 			...config,
@@ -131,11 +133,11 @@ export const HttpClientModule = fp<HttpClientModuleOptions>((app, opts) => {
 			},
 			(error) => Promise.reject(error as Error),
 		);
-		return httpClient;
+		return httpClient as HttpClient;
 	};
 
 	app.dependencies.register({
-		httpsAgent: asValue(new https.Agent({ keepAlive: true, ...agentConfig })),
+		httpsAgent: asValue(new https.Agent()),
 		createHttpClient: asFunction(() => createHttpClient),
 	});
 
