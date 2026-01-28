@@ -126,7 +126,7 @@ jobs:
 
           # Update version in package.json using npm
           cd "$PACKAGE_DIR"
-          npm version "$TAG_VERSION" --no-git-tag-version
+          pnpm version "$TAG_VERSION" --no-git-tag-version
 
       - name: Build Package
         run: |
@@ -148,10 +148,10 @@ jobs:
 
           if [ "$RELEASE_TYPE" = "next" ]; then
             echo "Publishing as 'next' tag"
-            npm publish --tag next
+            pnpm publish --tag next
           else
             echo "Publishing as 'latest' tag (default)"
-            npm publish
+            pnpm publish
           fi
 
       - name: Create Release Notes
